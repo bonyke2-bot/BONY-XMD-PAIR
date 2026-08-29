@@ -1,64 +1,12 @@
-require("dotenv").config();
-
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason
-} = require("@whiskeysockets/baileys");
-
-const pino = require("pino");
-
-async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("session");
-
-  const sock = makeWASocket({
-    auth: state,
-    logger: pino({ level: "silent" }),
-    printQRInTerminal: true,
-    browser: ["BONY-XMD", "Chrome", "1.0.0"]
-  });
-
-  sock.ev.on("creds.update", saveCreds);
-
-  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
-    if (connection === "open") {
-      console.log("✅ BONY-XMD connected to WhatsApp!");
-    }
-
-    if (connection === "close") {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !==
-        DisconnectReason.loggedOut;
-
-      console.log("❌ WhatsApp connection closed.");
-
-      if (shouldReconnect) {
-        console.log("🔄 Reconnecting...");
-        startBot();
-      } else {
-        console.log("⚠️ Logged out. Delete the session folder and reconnect.");
-      }
-    }
-  });
-
-  sock.ev.on("messages.upsert", async ({ messages }) => {
-    const message = messages[0];
-
-    if (!message?.message) return;
-
-    const text =
-      message.message.conversation ||
-      message.message.extendedTextMessage?.text ||
-      "";
-
-    if (text === ".ping") {
-      await sock.sendMessage(message.key.remoteJid, {
-        text: "🏓 Pong! BONY-XMD is alive."
-      });
-    }
-  });
-}
-
-startBot().catch((error) => {
-  console.error("❌ Failed to start BONY-XMD:", error);
+import express from "express";
+import { makeWASocket, useMultiFileAuthState, delay } from "@whiskeysockets/baileys";
+import pino from "pino";
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.get("/", (req,res)=>{
+res.send(`<html><head><title>BONY XMD PAIR</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0a0a0a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial;margin:0}.box{background:#1a1a1a;padding:30px;border-radius:20px;text-align:center;width:90%;max-width:400px;border:1px solid #333;box-shadow:0 0 30px #00ff8844}input{width:80%;padding:12px;border-radius:10px;border:1px solid #333;background:#222;color:white;margin:10px}button{padding:12px 20px;background:#00ff88;color:black;border:none;border-radius:10px;font-weight:bold;cursor:pointer;width:85%;font-size:16px}h1{color:#00ff88}#result{margin-top:20px;font-size:26px;color:#00ff88;font-weight:bold;letter-spacing:3px}</style></head><body><div class="box"><h1>BONY XMD</h1><p style="color:gray">Official Pairing Site</p><input id="num" placeholder="2547XXXXXXXX"/><br><button onclick="getCode()">GET PAIR CODE</button><p id="result"></p><p id="msg" style="font-size:12px;color:#aaa"></p><p style="font-size:11px;color:#555;margin-top:20px">Powered by BonyKE</p></div><script>async function getCode(){const num=document.getElementById('num').value;if(!num){alert('Enter number!');return}document.getElementById('result').innerText='⏳ Generating...';try{const res=await fetch('/code?number='+encodeURIComponent(num));const data=await res.json();if(data.code){document.getElementById('result').innerText=data.code;document.getElementById('msg').innerText='WhatsApp > Linked Devices > Link with code';}else{document.getElementById('result').innerText='❌ ERROR';document.getElementById('msg').innerText=data.error||'Failed';}}catch(e){document.getElementById('result').innerText='ERROR';document.getElementById('msg').innerText=e.message;}}</script></body></html>`)});
+app.get("/code", async (req,res)=>{
+let num=req.query.number;if(!num) return res.json({error:"Enter number"});num=num.replace(/[^0-9]/g,'');
+try{const {state,saveCreds}=await useMultiFileAuthState("./auth");const sock=makeWASocket({auth:state,logger:pino({level:"silent"}),printQRInTerminal:false,browser:["BONY XMD","Chrome","1.0"]});sock.ev.on("creds.update",saveCreds);if(!sock.authState.creds.registered){await delay(1500);let code=await sock.requestPairingCode(num);code=code?.match(/.{1,4}/g)?.join("-")||code;console.log("CODE FOR "+num+": "+code);return res.json({code:code});}else{return res.json({error:"Already registered"});}}catch(e){console.log(e);res.json({error:"Failed: "+e.message});}
 });
+app.listen(PORT,()=>console.log("BONY XMD Pair Running on "+PORT));
