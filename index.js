@@ -47,7 +47,7 @@ app.get('/code', async (req, res) => {
     let sock = makeWASocket({
       auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level:"fatal"})) },
       logger: pino({level:"fatal"}),
-      browser: Browsers.macOS("Desktop"),
+      browser: Browsers.Ubuntu("Chrome"),
       printQRInTerminal: false
     });
     sock.ev.on("creds.update", saveCreds);
