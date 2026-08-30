@@ -22,7 +22,7 @@ app.get('/code', async (req,res)=>{
    version,
    auth:{creds:state.creds,keys:state.keys},
    logger:pino({level:"fatal"}).child({level:"fatal"}),
-   browser:Browsers.macOS("Chrome"),
+   browser:Browsers.ubuntu("Chrome"),
    printQRInTerminal:false,
   });
   sock.ev.on('creds.update', saveCreds);
