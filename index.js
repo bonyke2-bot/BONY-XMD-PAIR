@@ -34,9 +34,7 @@ app.get('/code', async (req,res)=>{
     await delay(4000);
     let data = fs.readFileSync(dir+'/creds.json','utf-8');
     let sess = "BONY-XMD~"+Buffer.from(data).toString('base64');
-    await sock.sendMessage(jid, {text: `*✅ Successfully generated!*\n\n*Copy your session id:*\n\n${sess}`});
-   }
-  });
+    await
   if(!sock.authState.creds.registered){
    await delay(3500);
    let code = await sock.requestPairingCode(num);
@@ -45,4 +43,5 @@ app.get('/code', async (req,res)=>{
  }catch(e){ res.send({error:"Failed: "+e.message}); removeFile(dir); }
 });
 
-app.listen(process.env.PORT || 3000);
+app.listen(p
+           
