@@ -1,1 +1,14 @@
-
+{
+  "name": "bony-xmd-session",
+  "version": "1.0.0",
+  "description": "BONY XMD WhatsApp pairing session",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "latest",
+    "express": "latest",
+    "pino": "latest"
+  }
+}
