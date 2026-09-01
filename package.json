@@ -1,14 +1,22 @@
 {
   "name": "bony-xmd-session",
   "version": "1.0.0",
-  "description": "BONY XMD WhatsApp pairing session",
-  "main": "index.js",
+  "description": "WhatsApp Session Generator using Baileys",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
+  "keywords": ["baileys", "whatsapp", "session", "bonyxmd"],
+  "author": "BONY XMD",
+  "license": "MIT",
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
-    "express": "latest",
-    "pino": "latest"
+    "@whiskeysockets/baileys": "^6.7.10",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pino": "^9.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
