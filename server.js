@@ -1,18 +1,22 @@
 import express from 'express';
-import { makeWASocket, useMultiFileAuthState, delay, DisconnectReason } from '@whiskeysockets/baileys';
+import { makeWASocket, useMultiFileAuthState, delay } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
+
+if (!global.crypto) {
+  global.crypto = crypto;
+}
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-let sessions = {}; // temp storage {number: sessionString}
-let socks = {}; // active sockets {number: socket}
+let sessions = {};
+let socks = {};
 
-// Homepage UI
 app.get('/', (req,res)=>{
   res.send(`
 <!DOCTYPE html>
@@ -79,16 +83,13 @@ async function getCode(){
 `);
 });
 
-// Generate pairing code
 app.get('/code', async (req,res)=>{
   try{
     let num = req.query.number.replace(/[^0-9]/g,'');
     if(!num) return res.json({error: 'Invalid number'});
-
     const dir = `./auth_${num}`;
     if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true});
     if(socks[num]) { try{await socks[num].logout()}catch{} delete socks[num]; }
-
     const {state, saveCreds} = await useMultiFileAuthState(dir);
     const sock = makeWASocket({
       auth: state,
@@ -96,19 +97,17 @@ app.get('/code', async (req,res)=>{
       printQRInTerminal: false,
       browser: ['BONY XMD','Chrome','1.0']
     });
-
     socks[num] = sock;
     sock.ev.on('creds.update', saveCreds);
-
     sock.ev.on('connection.update', async (u)=>{
-      const {connection, lastDisconnect} = u;
+      const {connection} = u;
       if(connection === 'open'){
         await delay(2000);
         try{
           let data = fs.readFileSync(path.join(dir,'creds.json'));
           let b64 = Buffer.from(data).toString('base64');
           sessions[num] = 'BONY-XMD~' + b64;
-          setTimeout(() => { delete sessions[num]; }, 5*60*1000); // delete after 5min
+          setTimeout(() => { delete sessions[num]; }, 5*60*1000);
         }catch(e){}
         await delay(1000);
         try{await sock.logout()}catch{}
@@ -118,30 +117,29 @@ app.get('/code', async (req,res)=>{
         delete socks[num];
       }
     });
-
     await delay(3000);
     let code = await sock.requestPairingCode(num);
-    res.json({code: code.match(/.{1,4}/g).join('-')}); // XXXX-XXXX
-
+    res.json({code: code.match(/.{1,4}/g).join('-')});
   }catch(e){
+    console.log(e);
     res.json({error: 'Failed: ' + e.message})
   }
 });
 
-// Get session
 app.get('/session', (req,res)=>{
   let num = req.query.number;
   if(sessions[num]) res.json({session: sessions[num]});
   else res.json({session: null});
 });
 
-// Auto cleanup auth folders every 10min
 setInterval(()=>{
-  fs.readdirSync('./').forEach(f=>{
-    if(f.startsWith('auth_')){
-      fs.rmSync(f,{recursive:true,force:true})
-    }
-  })
+  try{
+    fs.readdirSync('./').forEach(f=>{
+      if(f.startsWith('auth_')){
+        fs.rmSync(f,{recursive:true,force:true})
+      }
+    })
+  }catch{}
 }, 10*60*1000);
 
 const PORT = process.env.PORT || 3000;
