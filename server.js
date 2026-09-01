@@ -1,14 +1,16 @@
+import crypto from 'crypto';
+// FORCE overwrite - lazima kabla ya baileys
+global.crypto = crypto;
+globalThis.crypto = crypto;
+
 import express from 'express';
-import { makeWASocket, useMultiFileAuthState, delay } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
 
-if (!global.crypto) {
-  global.crypto = crypto;
-}
+// Dynamic import baileys BAADA ya crypto kuwekwa
+const { makeWASocket, useMultiFileAuthState, delay } = await import('@whiskeysockets/baileys');
 
 const app = express();
 app.use(cors());
@@ -30,7 +32,6 @@ body{background:#000;color:#fff;font-family:Arial;display:flex;justify-content:c
 h2{color:#25D366;margin-bottom:20px}
 input{width:100%;padding:13px;margin:10px 0;border-radius:8px;border:none;background:#222;color:#fff;box-sizing:border-box;font-size:15px}
 button{width:100%;padding:13px;background:#25D366;border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer;font-size:15px}
-button:active{transform:scale(0.98)}
 #out{margin-top:15px;word-break:break-all;background:#222;padding:12px;border-radius:8px;font-size:12px;display:none;text-align:left}
 .loader{border:3px solid #222;border-top:3px solid #25D366;border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite;margin:10px auto;display:none}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
@@ -87,7 +88,7 @@ app.get('/code', async (req,res)=>{
   try{
     let num = req.query.number.replace(/[^0-9]/g,'');
     if(!num) return res.json({error: 'Invalid number'});
-    const dir = `./auth_${num}`;
+    const dir = \`./auth_\${num}\`;
     if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true});
     if(socks[num]) { try{await socks[num].logout()}catch{} delete socks[num]; }
     const {state, saveCreds} = await useMultiFileAuthState(dir);
@@ -143,4 +144,4 @@ setInterval(()=>{
 }, 10*60*1000);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=>console.log(`BONY XMD Running on port ${PORT}`));
+app.listen(PORT, ()=>console.log(\`BONY XMD Running on port \${PORT}\`));
