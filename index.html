@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head><title>BONY XMD PAIR</title></head>
+<body style="background:#000;color:#0f0;text-align:center;padding-top:30px;font-family:sans-serif">
+<h1>BONY XMD SESSION</h1>
+
+<h3>Option 1: Pairing Code</h3>
+<input id="num" placeholder="2547xxxxxxx" style="padding:10px;width:250px">
+<button onclick="pair()" style="padding:10px">GET CODE</button>
+<h2 id="result"></h2>
+
+<h3>Option 2: QR Code</h3>
+<button onclick="getQR()" style="padding:10px">SHOW QR</button>
+<img id="qr" width="250">
+
+<script>
+async function pair(){
+  let num = document.getElementById('num').value;
+  document.getElementById('result').innerText = 'Generating...';
+  let res = await fetch('/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:num})});
+  let data = await res.json();
+  document.getElementById('result').innerText = data.code ? 'CODE: '+data.code : 'Error: '+data.error;
+}
+
+async function getQR(){
+  let res = await fetch('/qr');
+  let data = await res.json();
+  if(data.qr) document.getElementById('qr').src = data.qr;
+  else setTimeout(getQR, 2000);
+}
+</script>
+</body>
+</html>
