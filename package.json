@@ -1,5 +1,6 @@
 {
-  "name": "bony-xmd-pair",
+  "name": "bony-xmd-session",
+  "version": "1.0.0",
   "type": "module",
   "main": "server.js",
   "scripts": {
