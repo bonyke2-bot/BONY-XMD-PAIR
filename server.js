@@ -1,15 +1,23 @@
 import express from 'express';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
-import { default as makeWASocket, useMultiFileAuthState, Browsers, DisconnectReason } from '@whiskeysockets/baileys';
-import { Boom } from '@hapi/boom';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { default as makeWASocket, useMultiFileAuthState, Browsers } from '@whiskeysockets/baileys';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-let sock;
 let qrData = null;
+
+// HOMEPAGE FIX
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.get('/qr', async (req, res) => {
   if(qrData){
@@ -27,7 +35,7 @@ app.post('/pair', async (req, res) => {
     const sessionId = 'auth_' + crypto.randomBytes(4).toString('hex');
     const { state, saveCreds } = await useMultiFileAuthState(sessionId);
     
-    sock = makeWASocket({
+    const sock = makeWASocket({
       auth: state,
       browser: Browsers.macOS('Desktop'),
       printQRInTerminal: false
@@ -36,15 +44,14 @@ app.post('/pair', async (req, res) => {
     sock.ev.on('creds.update', saveCreds);
     
     sock.ev.on('connection.update', (update) => {
-      const { connection, qr } = update;
+      const { qr } = update;
       if(qr) qrData = qr;
-      if(connection === 'open') qrData = null;
     });
     
     if(!sock.authState.creds.registered){
-      await delay(1500);
+      await new Promise(res => setTimeout(res, 1500));
       const code = await sock.requestPairingCode(number);
-      return res.json({ code: code, sessionId });
+      return res.json({ code: code });
     }
     
   } catch(e){
@@ -52,5 +59,4 @@ app.post('/pair', async (req, res) => {
   }
 });
 
-const delay = (ms) => new Promise(res => setTimeout(res, ms));
 app.listen(process.env.PORT || 8080, () => console.log('BONY XMD Running'));
